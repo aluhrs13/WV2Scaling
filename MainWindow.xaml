@@ -1,0 +1,42 @@
+﻿<Window x:Class="WV2ScalingWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WV2ScalingWPF"
+        mc:Ignorable="d"
+        Title="WebView2 Performance Scaling" Height="800" Width="800">
+    <Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <DockPanel DockPanel.Dock="Top">
+                    <Button x:Name="ButtonGo"
+                        DockPanel.Dock="Right"
+                        Click="ButtonGo_Click"
+                        Content="Add WV2"
+                    />
+                    <TextBox Name="addressBar" Text="https://microsoft.com"/>
+                </DockPanel>
+                <DockPanel DockPanel.Dock="Top">
+                    <CheckBox Content="Suspend All" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"                        DockPanel.Dock="Left"
+/>
+                    <Button x:Name="ButtonRefresh"
+                        DockPanel.Dock="Right"
+                        Click="ButtonRefresh_Click"
+                        Content="Refresh"
+                            Width="100"
+                    />
+                </DockPanel>
+                <Label Content="Process List" />
+                <ListView Name="processList" Height="300"/>
+                <Label Content="Creation Times" />
+                <ListView Name="creationList" Height="300"/>
+
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
