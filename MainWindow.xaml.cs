@@ -18,17 +18,11 @@ using System.Windows.Shapes;
 
 namespace WV2ScalingWPF
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         List<CoreWebView2Controller> ControllerList;
         Stopwatch watch = new Stopwatch();
 
-        //TODO: Remove WV2
-        //TODO: UDFs
-        //TODO: Handle resize
         public MainWindow()
         {
             Environment.SetEnvironmentVariable("COREWEBVIEW2_FORCED_HOSTING_MODE", "COREWEBVIEW2_HOSTING_MODE_WINDOW_TO_VISUAL");
@@ -48,13 +42,20 @@ namespace WV2ScalingWPF
             watch.Start();
             creationList.Items.Add($"Creation starting: {watch.ElapsedMilliseconds}");
             await InitializeNewWV2Async();
-            //watch.Stop();
-
             creationList.Items.Add($"Creation completed: {watch.ElapsedMilliseconds}");
             
             await UpdateMemoryUsage();
         }
 
+        /*
+        * 
+        * This method has a series of options for uncommenting to change how WV2 works.
+        * 
+        * Option #1 - Leave as-is
+        *      WV2 will have a Browser, GPU, and 2-3 Utility processes shared across the app
+        *      Each new WV2 will create an additional renderer process.
+        * 
+        */
         public async Task InitializeNewWV2Async()
         {
             IntPtr windowHandle = new WindowInteropHelper(this).Handle;
@@ -62,7 +63,10 @@ namespace WV2ScalingWPF
 
             /*
              * 
-             * Option #2 - Process per site. Better perf, worse isolation.
+             * Option #2 - Process per site
+             *      This will share processes for each WV2 on the same origin
+             *      There will be fewer renderer processes, less memory usage
+             *      But there's potential security concerns.
              * 
              */
             //envOpts.AdditionalBrowserArguments = "--process-per-site";
@@ -70,18 +74,24 @@ namespace WV2ScalingWPF
 
             /*
              * 
-             * Option #3 - A UDF per WV2. Worst perf, best isolation.
+             * Option #3 - Full set of WV2 processes per WV2
+             *      This will make a new "User Data Folder" for ever new WV2.
+             *      It will create 5-6 processes per WV2.
+             *      This is NOT RECOMMENDED but would be the most secure isolation.
              * 
              */
-            //TODO: Figure out how to get where UDF default is.
-            //CoreWebView2Environment environment = await CoreWebView2Environment.CreateAsync(null, null, envOpts);
+            //CoreWebView2Environment environment = await CoreWebView2Environment.CreateAsync(null, System.IO.Directory.GetCurrentDirectory()+"/UDF"+ControllerList.Count, envOpts);
             CoreWebView2Environment environment = await CoreWebView2Environment.CreateAsync(null, null, envOpts);
             
             CoreWebView2ControllerOptions controllerOpts = environment.CreateCoreWebView2ControllerOptions();
 
             /*
              * 
-             * Option #4 - A profile per WV2. Worse perf, better isolation.
+             * Option #4 - A profile per WV2.
+             *      This makes a new "Profile" (Just like a profile in Edge or Chrome) for each WV2
+             *      Cookies, storage, etc. are somewhat isolated
+             *      Not a great "security" barrier, but useful for separating data.
+             *      Uses a bit more RAM and disk.
              * 
              */
             //controllerOpts.ProfileName = "Profile" + ControllerList.Count;
@@ -95,6 +105,9 @@ namespace WV2ScalingWPF
             controller.Bounds = GetNewWV2Location(ControllerList.Count);
             RearrangeWV2s();
             controller.IsVisible = true;
+
+            //This script injects into every page and will fire a PostMessage when the page has its "Largest Contentful Paint" (LCP)
+            //There may be multiple LCP events, the last one is the one we care about.
             await controller.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(@"
             const observer = new PerformanceObserver((list) => {
                 const entries = list.getEntries();
@@ -138,12 +151,12 @@ namespace WV2ScalingWPF
             });
         }
 
-        //TODO: Handle profiles and new UDFs
         private async Task UpdateMemoryUsage()
         {
             processList.Items.Clear();
             processList.Items.Add("Loading...");
-            await Task.Delay(1000);
+            //Delay to give the processes some time to settle.
+            await Task.Delay(1500);
             processList.Items.Clear();
 
             List<CoreWebView2ProcessInfo> _processList = new List<CoreWebView2ProcessInfo>();
@@ -189,12 +202,12 @@ namespace WV2ScalingWPF
             int totalWV2Count = ControllerList.Count+1;
             int sqrt = (int)Math.Ceiling(Math.Sqrt(totalWV2Count));
 
-            int newWidth = (int)Math.Floor((Width-300) / sqrt);
-            int newHeight = (int)Math.Floor((Height-32) / sqrt);
-            int left = (wvNumber % sqrt) * newWidth;
-            int top = (wvNumber / sqrt) * newHeight;
+            int width = (int)Math.Floor((Width-300) / sqrt);
+            int height = (int)Math.Floor((Height-32) / sqrt);
+            int left = (wvNumber % sqrt) * width;
+            int top = (wvNumber / sqrt) * height;
             
-            return new System.Drawing.Rectangle(left+300, top, newWidth, newHeight);
+            return new System.Drawing.Rectangle(left+300, top, width, height);
         }
 
         private void ButtonGo_Click(object sender, RoutedEventArgs e)
@@ -220,47 +233,3 @@ namespace WV2ScalingWPF
         }
     }
 }
-
-/*
- * 400,400 Window
- * l, r, h, w, h
- * 1: 0,0,400,400
- * 2: 
- *      1: 0, 0,200,400 - 0,0, 
- *      2: 200, 0, 200, 400
- * 3:
- *      1: 0, 0, 200, 200
- *      2: 200, 0, 200, 200
- *      3: 0, 200, 200, 200
- * 4:
- *      1: 0, 0, 200, 200
- *      2: 200, 0, 200, 200
- *      3: 0, 200, 200, 200
- *      4: 200, 200, 200, 200
- * 5:
- *      1: 0, 0, 100, 200
- *      2: 100, 0, 100, 200
- *      3: 200, 0, 100, 200
- *      4: 
-
-
-//TODO: There's a third case where width needs to be /2 when the current grid size is full.
-if (LastWV.Bounds.Height > LastWV.Bounds.Width)
-{
-    newWidth = LastWV.Bounds.Width;
-    newHeight = LastWV.Bounds.Height/2;
-}
-else
-{
-    newWidth = LastWV.Bounds.Height;
-    newHeight = LastWV.Bounds.Height;
-}
-
-
-
- * 
- * 
- *                     newWidth = LastWV.Bounds.Height;
-    newHeight = LastWV.Bounds.Height;
-
-*/
