@@ -10,5 +10,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.1724-prerelease" />
   </ItemGroup>
+		<ItemGroup>
+				<Content Include="assets\*">
+						<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+				</Content>
+		</ItemGroup>
 
 </Project>

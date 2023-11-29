@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -69,8 +70,7 @@ namespace WV2ScalingWPF
              *      But there's potential security concerns.
              * 
              */
-            //envOpts.AdditionalBrowserArguments = "--process-per-site";
-
+            envOpts.AdditionalBrowserArguments = "--process-per-site";
 
             /*
              * 
@@ -116,6 +116,9 @@ namespace WV2ScalingWPF
             });
             observer.observe({ type: ""largest-contentful-paint"", buffered: true });
             ");
+            string dir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "assets") ;
+
+            controller.CoreWebView2.SetVirtualHostNameToFolderMapping("foo.example", dir, CoreWebView2HostResourceAccessKind.Allow);
             controller.CoreWebView2.WebMessageReceived += MessageReceived;
             controller.CoreWebView2.NavigationCompleted += NavigationCompleted;
             controller.CoreWebView2.Navigate(addressBar.Text);

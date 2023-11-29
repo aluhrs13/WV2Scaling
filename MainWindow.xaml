@@ -19,7 +19,7 @@
                         Click="ButtonGo_Click"
                         Content="Add WV2"
                     />
-                    <TextBox Name="addressBar" Text="https://microsoft.com"/>
+                    <TextBox Name="addressBar" Text="https://foo.example/index.html"/>
                 </DockPanel>
                 <DockPanel DockPanel.Dock="Top">
                     <CheckBox Content="Suspend All" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"                        DockPanel.Dock="Left"
